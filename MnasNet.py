@@ -1,9 +1,9 @@
 ﻿import tensorflow as tf
 
-Detection_or_Classifier='Classifier'#Detection,Classifier
+Detection_or_Classifier='classifier'#detection,classifier
 
 class MnasNet():
-    def __init__(self,num_classes=1000,learning_rate=0.45):
+    def __init__(self,num_classes=1000,learning_rate=0.1):
         self.num_classes = num_classes
         self.learning_rate = learning_rate
         
@@ -54,12 +54,12 @@ class MnasNet():
             x = MnasNetBlock('MnasNetBlock_{}'.format(index), x, self.infos[index][0], self.infos[index][1], self.infos[index][2], self.infos[index][3],
                              self.norm, self.activate, self.is_training)
             
-        if Detection_or_Classifier=='Classifier':
+        if Detection_or_Classifier=='classifier':
             with tf.variable_scope('zsc_classifier'):
                 x = tf.nn.avg_pool(x, [1,7,7,1], [1,1,1,1], 'VALID')
                 x = _conv_block('FinalConv',x,self.num_classes,1,1,'SAME',None,None,self.is_training)
                 self.classifier_logits = tf.reshape(x, [-1, self.num_classes])
-        elif Detection_or_Classifier=='Detection':
+        elif Detection_or_Classifier=='detection':
             pass
         else:
             raise ValueError('Detection_or_Classifier must be Classifier or Detection')
@@ -70,7 +70,7 @@ class MnasNet():
         with tf.variable_scope('output'):
             regularzation_loss = self.loss.regularzation_loss()
             
-            if Detection_or_Classifier=='Classifier':
+            if Detection_or_Classifier=='classifier':
                 self.all_loss = self.loss.sparse_softmax_loss(self.classifier_logits,self.y)
                 self.all_loss += regularzation_loss
                 
@@ -86,15 +86,15 @@ class MnasNet():
                 self.accuracy = tf.reduce_mean(tf.cast(tf.equal(self.y, self.y_out_argmax), tf.float32))
                 self.accuracy_top_5 = tf.reduce_mean(tf.cast(tf.nn.in_top_k(self.y_out_softmax,self.y,5),tf.float32))
 
-            elif Detection_or_Classifier=='Detection':
+            elif Detection_or_Classifier=='detection':
                 pass
     def __init_input(self):
-        if Detection_or_Classifier=='Classifier':
+        if Detection_or_Classifier=='classifier':
             with tf.variable_scope('input'):
                 self.input_image = tf.placeholder(tf.float32, [None,224,224,3], name='zsc_input')
                 self.y = tf.placeholder(tf.int32, [None], name='zsc_input_target')
                 self.is_training = tf.placeholder(tf.bool, name='zsc_is_training')
-        elif Detection_or_Classifier=='Detection':
+        elif Detection_or_Classifier=='detection':
             pass
         else:
             raise ValueError('Detection_or_Classifier must be Detection or Classifier')
@@ -332,7 +332,7 @@ def BN(x, is_training, name='batch_norm'):
      
         return tf.nn.batch_normalization(x, mean, variance, beta, scale, epsilon)
 ##weight initializer
-def GetWeight(name,shape,weights_decay=0.0004):
+def GetWeight(name,shape,weights_decay=0.000004):
     with tf.variable_scope(name):
         w = tf.get_variable('weight',shape,tf.float32,initializer=glorot_uniform_initializer())
         weight_decay = tf.multiply(tf.nn.l2_loss(w),weights_decay,name='weight_loss')

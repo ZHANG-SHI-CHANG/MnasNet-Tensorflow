@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from CliqueAttentionCoordConvDeformableDecoupledClassifier import CliqueFPN as Model
-from CliqueAttentionCoordConvDeformableDecoupledClassifier import Detection_or_Classifier
+from MnasNet import MnasNet as Model
+from MnasNet import Detection_or_Classifier
 
 from detection_dataloader import create_training_instances
 from detection_dataloader import BatchGenerator as DetectionBatchGenerator
@@ -17,7 +17,7 @@ StartEpoch = 0
 BestScore = 0
 DetectFirstTrain = True
 PrintFreq = 10
-BatchSize = 16
+BatchSize = 96
 Mode = 'Train'
 
 def Main():
@@ -52,7 +52,7 @@ def Train(sess, model, dataloder,epoch):
         for X_batch, y_batch in dataloder.next():
             feed_dict = {model.input_image: X_batch,
                          model.y: y_batch,
-                         model.is_training: 1.0}
+                         model.is_training: True}
                     
             _, loss, acc, acc_5 = sess.run(
                             [model.train_op,model.all_loss,model.accuracy,model.accuracy_top_5],
@@ -93,7 +93,7 @@ def Train(sess, model, dataloder,epoch):
                     
             feed_dict = {model.input_image:x_batch,
                          model.anchors:anchors_batch,
-                         model.is_training:1.0,
+                         model.is_training:True,
                          model.true_boxes:t_batch,
                          model.true_yolo_1:yolo_1,
                          model.true_yolo_2:yolo_2,
@@ -151,7 +151,7 @@ def Test(sess, model, dataloder, epoch):
         for X_batch, y_batch in dataloder.next():
             feed_dict = {model.input_image: X_batch,
                          model.y: y_batch,
-                         model.is_training: 0.0}
+                         model.is_training: False}
                     
             loss, acc, acc_5 = sess.run(
                             [model.all_loss,model.accuracy,model.accuracy_top_5],
@@ -183,14 +183,13 @@ def Test(sess, model, dataloder, epoch):
             _image = cv2.resize(image,(32*10,32*10))[np.newaxis,:,:,::-1]
             infos = sess.run(model.infos,
                                           feed_dict={model.input_image:_image,
-                                                     model.is_training:0.0,
+                                                     model.is_training:False,
                                                      model.original_wh:[[image_w,image_h]]
                                                      }
                                           )
             infos = model.do_nms(infos,0.3)
             image = draw_boxes(image, infos.tolist(), labels)
             cv2.imwrite(os.path.join(os.getcwd(),'test_results',Detection_or_Classifier,image_name),image)
-       return None
     
 
 def LoadModel(sess,model):
@@ -254,13 +253,7 @@ def SaveModel(sess, model, epoch, score):
         print('save new best model')
     
 def EnvironmentSetup():
-    anchors = [33,36, 53,69, 71,144, 106,85, 137,151, 145,269, 240,173, 257,326, 412,412]
     num_classes = 10
-    num_anchors = 3
-    batch_size = 16
-    max_box_per_image = 60
-    min_input_size = 32*7
-    max_input_size = 32*10
     
     tf.reset_default_graph()
     config = tf.ConfigProto(allow_soft_placement=True)
@@ -268,11 +261,7 @@ def EnvironmentSetup():
     sess = tf.Session(config=config)
 
     print("Building the model...")
-    model = Model(num_classes=num_classes,
-                  num_anchors=num_anchors,
-                  batch_size = batch_size,
-                  max_box_per_image = max_box_per_image,
-                  max_grid=[max_input_size,max_input_size])
+    model = Model(num_classes=num_classes)
     print("Model is built successfully\n")
 
     sess.run(tf.group(tf.global_variables_initializer()))
