@@ -24,7 +24,7 @@ class MnasNet():
                       }
         
         self.__init_global_epoch()
-        self.__init_global_step()
+        self.__init_BestScore()
         self.__init_input()
         
         with tf.variable_scope('zsc_feature'):
@@ -103,11 +103,11 @@ class MnasNet():
             self.global_epoch_tensor = tf.Variable(-1, trainable=False, name='global_epoch')
             self.global_epoch_input = tf.placeholder('int32', None, name='global_epoch_input')
             self.global_epoch_assign_op = self.global_epoch_tensor.assign(self.global_epoch_input)
-    def __init_global_step(self):
-        with tf.variable_scope('global_step'):
-            self.global_step_tensor = tf.Variable(0, trainable=False, name='global_step')
-            self.global_step_input = tf.placeholder('int32', None, name='global_step_input')
-            self.global_step_assign_op = self.global_step_tensor.assign(self.global_step_input)
+    def __init_BestScore(self):
+        with tf.variable_scope('BestScore'):
+            self.BestScore_tensor = tf.Variable(0.0, trainable=False, name='BestScore_tensor')
+            self.BestScore_input = tf.placeholder('float32', None, name='BestScore_input')
+            self.BestScore_assign_op = self.BestScore_tensor.assign(self.BestScore_input)
 
 from tensorflow.python.ops import array_ops
 ##LOSS
